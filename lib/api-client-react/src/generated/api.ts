@@ -5,18 +5,33 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  ClearResponse,
+  ErrorResponse,
+  HealthStatus,
+  IndexImagesBody,
+  IndexImagesResponse,
+  ListImagesResponse,
+  SearchImagesBody,
+  SearchResponse,
+  StatsResponse,
+  UploadImagesBody,
+  UploadImagesResponse,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +107,589 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Index all images in the given folder path into the FAISS database
+ * @summary Index images from a folder path
+ */
+export const getIndexImagesUrl = () => {
+  return `/api/images/index`;
+};
+
+export const indexImages = async (
+  indexImagesBody: IndexImagesBody,
+  options?: RequestInit,
+): Promise<IndexImagesResponse> => {
+  return customFetch<IndexImagesResponse>(getIndexImagesUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(indexImagesBody),
+  });
+};
+
+export const getIndexImagesMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof indexImages>>,
+    TError,
+    { data: BodyType<IndexImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof indexImages>>,
+  TError,
+  { data: BodyType<IndexImagesBody> },
+  TContext
+> => {
+  const mutationKey = ["indexImages"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof indexImages>>,
+    { data: BodyType<IndexImagesBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return indexImages(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type IndexImagesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof indexImages>>
+>;
+export type IndexImagesMutationBody = BodyType<IndexImagesBody>;
+export type IndexImagesMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Index images from a folder path
+ */
+export const useIndexImages = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof indexImages>>,
+    TError,
+    { data: BodyType<IndexImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof indexImages>>,
+  TError,
+  { data: BodyType<IndexImagesBody> },
+  TContext
+> => {
+  return useMutation(getIndexImagesMutationOptions(options));
+};
+
+/**
+ * Upload one or more images to be indexed in the FAISS database
+ * @summary Upload images to the database
+ */
+export const getUploadImagesUrl = () => {
+  return `/api/images/upload`;
+};
+
+export const uploadImages = async (
+  uploadImagesBody: UploadImagesBody,
+  options?: RequestInit,
+): Promise<UploadImagesResponse> => {
+  const formData = new FormData();
+  uploadImagesBody.files.forEach((value) => formData.append(`files`, value));
+
+  return customFetch<UploadImagesResponse>(getUploadImagesUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadImagesMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadImages>>,
+    TError,
+    { data: BodyType<UploadImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadImages>>,
+  TError,
+  { data: BodyType<UploadImagesBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadImages"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadImages>>,
+    { data: BodyType<UploadImagesBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadImages(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadImagesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadImages>>
+>;
+export type UploadImagesMutationBody = BodyType<UploadImagesBody>;
+export type UploadImagesMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Upload images to the database
+ */
+export const useUploadImages = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadImages>>,
+    TError,
+    { data: BodyType<UploadImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadImages>>,
+  TError,
+  { data: BodyType<UploadImagesBody> },
+  TContext
+> => {
+  return useMutation(getUploadImagesMutationOptions(options));
+};
+
+/**
+ * Returns how many images are in the database
+ * @summary Get database statistics
+ */
+export const getGetStatsUrl = () => {
+  return `/api/images/stats`;
+};
+
+export const getStats = async (
+  options?: RequestInit,
+): Promise<StatsResponse> => {
+  return customFetch<StatsResponse>(getGetStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStatsQueryKey = () => {
+  return [`/api/images/stats`] as const;
+};
+
+export const getGetStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStats>>> = ({
+    signal,
+  }) => getStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStats>>
+>;
+export type GetStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get database statistics
+ */
+
+export function useGetStats<
+  TData = Awaited<ReturnType<typeof getStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns list of all indexed image paths
+ * @summary List all indexed images
+ */
+export const getListImagesUrl = () => {
+  return `/api/images/list`;
+};
+
+export const listImages = async (
+  options?: RequestInit,
+): Promise<ListImagesResponse> => {
+  return customFetch<ListImagesResponse>(getListImagesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListImagesQueryKey = () => {
+  return [`/api/images/list`] as const;
+};
+
+export const getListImagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImages>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listImages>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListImagesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listImages>>> = ({
+    signal,
+  }) => listImages({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListImagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImages>>
+>;
+export type ListImagesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all indexed images
+ */
+
+export function useListImages<
+  TData = Awaited<ReturnType<typeof listImages>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listImages>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListImagesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Remove all indexed images from the FAISS database
+ * @summary Clear the image database
+ */
+export const getClearDatabaseUrl = () => {
+  return `/api/images/clear`;
+};
+
+export const clearDatabase = async (
+  options?: RequestInit,
+): Promise<ClearResponse> => {
+  return customFetch<ClearResponse>(getClearDatabaseUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClearDatabaseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearDatabase>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearDatabase>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clearDatabase"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearDatabase>>,
+    void
+  > = () => {
+    return clearDatabase(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearDatabaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearDatabase>>
+>;
+
+export type ClearDatabaseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Clear the image database
+ */
+export const useClearDatabase = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearDatabase>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearDatabase>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClearDatabaseMutationOptions(options));
+};
+
+/**
+ * Upload a query image and find visually similar images in the database
+ * @summary Search for similar images
+ */
+export const getSearchImagesUrl = () => {
+  return `/api/search`;
+};
+
+export const searchImages = async (
+  searchImagesBody: SearchImagesBody,
+  options?: RequestInit,
+): Promise<SearchResponse> => {
+  const formData = new FormData();
+  formData.append(`query`, searchImagesBody.query);
+  if (searchImagesBody.threshold !== undefined) {
+    formData.append(`threshold`, searchImagesBody.threshold.toString());
+  }
+  if (searchImagesBody.topK !== undefined) {
+    formData.append(`topK`, searchImagesBody.topK.toString());
+  }
+
+  return customFetch<SearchResponse>(getSearchImagesUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getSearchImagesMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchImages>>,
+    TError,
+    { data: BodyType<SearchImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof searchImages>>,
+  TError,
+  { data: BodyType<SearchImagesBody> },
+  TContext
+> => {
+  const mutationKey = ["searchImages"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof searchImages>>,
+    { data: BodyType<SearchImagesBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return searchImages(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SearchImagesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof searchImages>>
+>;
+export type SearchImagesMutationBody = BodyType<SearchImagesBody>;
+export type SearchImagesMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Search for similar images
+ */
+export const useSearchImages = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchImages>>,
+    TError,
+    { data: BodyType<SearchImagesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof searchImages>>,
+  TError,
+  { data: BodyType<SearchImagesBody> },
+  TContext
+> => {
+  return useMutation(getSearchImagesMutationOptions(options));
+};
+
+/**
+ * Serve the actual image file by its index ID
+ * @summary Serve an indexed image
+ */
+export const getGetImageUrl = (id: number) => {
+  return `/api/images/${id}`;
+};
+
+export const getImage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetImageUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImageQueryKey = (id: number) => {
+  return [`/api/images/${id}`] as const;
+};
+
+export const getGetImageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImage>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetImageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getImage>>> = ({
+    signal,
+  }) => getImage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getImage>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetImageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImage>>
+>;
+export type GetImageQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Serve an indexed image
+ */
+
+export function useGetImage<
+  TData = Awaited<ReturnType<typeof getImage>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImageQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

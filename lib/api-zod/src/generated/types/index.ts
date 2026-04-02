@@ -6,4 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./clearResponse";
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./indexedImage";
+export * from "./indexImagesBody";
+export * from "./indexImagesResponse";
+export * from "./listImagesResponse";
+export * from "./searchImagesBody";
+export * from "./searchResponse";
+export * from "./searchResponseQuery";
+export * from "./searchResult";
+export * from "./statsResponse";
+export * from "./uploadImagesBody";
+export * from "./uploadImagesResponse";

@@ -14,3 +14,111 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Index all images in the given folder path into the FAISS database
+ * @summary Index images from a folder path
+ */
+export const IndexImagesBody = zod.object({
+  folderPath: zod
+    .string()
+    .describe("Absolute or relative path to the image folder"),
+});
+
+export const IndexImagesResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  count: zod.number().describe("Number of images indexed"),
+});
+
+/**
+ * Upload one or more images to be indexed in the FAISS database
+ * @summary Upload images to the database
+ */
+export const UploadImagesBody = zod.object({
+  files: zod.array(zod.instanceof(File)),
+});
+
+export const UploadImagesResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  count: zod.number().describe("Number of images uploaded and indexed"),
+});
+
+/**
+ * Returns how many images are in the database
+ * @summary Get database statistics
+ */
+export const GetStatsResponse = zod.object({
+  totalImages: zod.number(),
+  indexLoaded: zod.boolean(),
+  modelLoaded: zod.boolean(),
+});
+
+/**
+ * Returns list of all indexed image paths
+ * @summary List all indexed images
+ */
+export const ListImagesResponse = zod.object({
+  images: zod.array(
+    zod.object({
+      id: zod.number(),
+      path: zod.string(),
+      filename: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * Remove all indexed images from the FAISS database
+ * @summary Clear the image database
+ */
+export const ClearDatabaseResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
+ * Upload a query image and find visually similar images in the database
+ * @summary Search for similar images
+ */
+export const searchImagesBodyThresholdDefault = 50;
+export const searchImagesBodyTopKDefault = 20;
+
+export const SearchImagesBody = zod.object({
+  query: zod.instanceof(File),
+  threshold: zod
+    .number()
+    .default(searchImagesBodyThresholdDefault)
+    .describe("Similarity threshold 0-100"),
+  topK: zod
+    .number()
+    .default(searchImagesBodyTopKDefault)
+    .describe("Maximum results"),
+});
+
+export const SearchImagesResponse = zod.object({
+  results: zod.array(
+    zod.object({
+      id: zod.number(),
+      path: zod.string(),
+      filename: zod.string(),
+      score: zod.number().describe("Similarity score 0-100"),
+      imageUrl: zod.string().describe("URL to serve the image"),
+    }),
+  ),
+  query: zod.object({
+    threshold: zod.number(),
+    topK: zod.number(),
+    filename: zod.string(),
+  }),
+  totalFound: zod.number(),
+});
+
+/**
+ * Serve the actual image file by its index ID
+ * @summary Serve an indexed image
+ */
+export const GetImageParams = zod.object({
+  id: zod.coerce.number(),
+});

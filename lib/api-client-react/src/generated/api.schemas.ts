@@ -8,3 +8,81 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface IndexImagesBody {
+  /** Absolute or relative path to the image folder */
+  folderPath: string;
+}
+
+export interface IndexImagesResponse {
+  success: boolean;
+  message: string;
+  /** Number of images indexed */
+  count: number;
+}
+
+export interface UploadImagesResponse {
+  success: boolean;
+  message: string;
+  /** Number of images uploaded and indexed */
+  count: number;
+}
+
+export interface StatsResponse {
+  totalImages: number;
+  indexLoaded: boolean;
+  modelLoaded: boolean;
+}
+
+export interface IndexedImage {
+  id: number;
+  path: string;
+  filename: string;
+}
+
+export interface ListImagesResponse {
+  images: IndexedImage[];
+}
+
+export interface ClearResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface SearchResult {
+  id: number;
+  path: string;
+  filename: string;
+  /** Similarity score 0-100 */
+  score: number;
+  /** URL to serve the image */
+  imageUrl: string;
+}
+
+export type SearchResponseQuery = {
+  threshold: number;
+  topK: number;
+  filename: string;
+};
+
+export interface SearchResponse {
+  results: SearchResult[];
+  query: SearchResponseQuery;
+  totalFound: number;
+}
+
+export type UploadImagesBody = {
+  files: Blob[];
+};
+
+export type SearchImagesBody = {
+  query: Blob;
+  /** Similarity threshold 0-100 */
+  threshold?: number;
+  /** Maximum results */
+  topK?: number;
+};

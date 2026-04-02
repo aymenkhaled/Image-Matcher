@@ -1,0 +1,102 @@
+import torch
+import faiss
+import numpy as np
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
+import os
+
+# ─── 1. Load model (first run downloads ~600MB, then cached locally) ───
+print("Loading CLIP model...")
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+model.eval()
+print("Model loaded!\n")
+
+
+# ─── 2. Image → Vector ───
+def image_to_vector(path):
+    img = Image.open(path).convert("RGB")
+    inputs = processor(images=img, return_tensors="pt")
+    with torch.no_grad():
+        vec = model.get_image_features(**inputs)
+    vec = vec / vec.norm(p=2, dim=-1, keepdim=True)  # normalize
+    return vec.numpy().astype("float32")
+
+
+# ─── 3. Database class ───
+class ImageDB:
+    def __init__(self):
+        self.index = faiss.IndexFlatIP(512)
+        self.paths = []
+
+    def index_folder(self, folder):
+        count = 0
+        for root, _, files in os.walk(folder):
+            for f in files:
+                if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.bmp')):
+                    path = os.path.join(root, f)
+                    try:
+                        vec = image_to_vector(path)
+                        self.index.add(vec)
+                        self.paths.append(path)
+                        count += 1
+                        print(f"  [{count}] {path}")
+                    except Exception as e:
+                        print(f"  SKIP {path} → {e}")
+        print(f"\nDone: {count} images indexed.\n")
+
+    def search(self, query_path, threshold=50, top_k=10):
+        """
+        threshold : 0-100 percentage (50 = 50% similar)
+        top_k     : max results
+        """
+        vec = image_to_vector(query_path)
+        scores, ids = self.index.search(vec, min(top_k, len(self.paths)))
+
+        results = []
+        for score, idx in zip(scores[0], ids[0]):
+            pct = round(float(score) * 100, 2)
+            if pct >= threshold:
+                results.append({"path": self.paths[idx], "score": pct})
+
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return results
+
+    def save(self, index_file="db.index", paths_file="db_paths.npy"):
+        faiss.write_index(self.index, index_file)
+        np.save(paths_file, np.array(self.paths))
+
+    def load(self, index_file="db.index", paths_file="db_paths.npy"):
+        self.index = faiss.read_index(index_file)
+        self.paths = list(np.load(paths_file))
+        print(f"Loaded {len(self.paths)} images from disk.\n")
+
+
+# ─── 4. USAGE ───
+if __name__ == "__main__":
+
+    db = ImageDB()
+
+    # --- FIRST TIME: index your image folder ---
+    db.index_folder("./my_images")          # ← put your images here
+
+    # --- Save so you don't re-index every time ---
+    db.save()
+
+    # --- NEXT TIME: just load (much faster) ---
+    # db.load()
+
+    # --- Search ---
+    query = "./query.jpg"                    # ← your search image
+    threshold = 50                            # ← similarity percentage (0-100)
+
+    print(f"Searching: {query} (threshold: {threshold}%)")
+    print("=" * 60)
+
+    results = db.search(query, threshold=threshold, top_k=20)
+
+    if not results:
+        print("No similar images found. Try lowering the threshold.")
+    else:
+        for i, r in enumerate(results, 1):
+            print(f"  {i}. {r['score']:>6.2f}%  →  {r['path']}")

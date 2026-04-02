@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Image Search"
+version = "1.0.0"
+id = "artifacts/image-search"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21030
+
+[services.development]
+run = "pnpm --filter @workspace/image-search run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/image-search", "run", "build" ]
+publicDir = "artifacts/image-search/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21030"
+BASE_PATH = "/"

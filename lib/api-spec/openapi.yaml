@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: images
+    description: Image database operations
+  - name: search
+    description: Image similarity search
 paths:
   /healthz:
     get:
@@ -24,6 +28,194 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /images/index:
+    post:
+      operationId: indexImages
+      tags: [images]
+      summary: Index images from a folder path
+      description: Index all images in the given folder path into the FAISS database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IndexImagesBody"
+      responses:
+        "200":
+          description: Indexing started or completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexImagesResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /images/upload:
+    post:
+      operationId: uploadImages
+      tags: [images]
+      summary: Upload images to the database
+      description: Upload one or more images to be indexed in the FAISS database
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - files
+      responses:
+        "200":
+          description: Images uploaded and indexed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadImagesResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /images/stats:
+    get:
+      operationId: getStats
+      tags: [images]
+      summary: Get database statistics
+      description: Returns how many images are in the database
+      responses:
+        "200":
+          description: Database statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+
+  /images/list:
+    get:
+      operationId: listImages
+      tags: [images]
+      summary: List all indexed images
+      description: Returns list of all indexed image paths
+      responses:
+        "200":
+          description: List of indexed images
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListImagesResponse"
+
+  /images/clear:
+    post:
+      operationId: clearDatabase
+      tags: [images]
+      summary: Clear the image database
+      description: Remove all indexed images from the FAISS database
+      responses:
+        "200":
+          description: Database cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClearResponse"
+
+  /search:
+    post:
+      operationId: searchImages
+      tags: [search]
+      summary: Search for similar images
+      description: Upload a query image and find visually similar images in the database
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  format: binary
+                threshold:
+                  type: number
+                  description: Similarity threshold 0-100
+                  default: 50
+                topK:
+                  type: integer
+                  description: Maximum results
+                  default: 20
+              required:
+                - query
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /images/{id}:
+    get:
+      operationId: getImage
+      tags: [images]
+      summary: Serve an indexed image
+      description: Serve the actual image file by its index ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Image file
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +226,147 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    IndexImagesBody:
+      type: object
+      properties:
+        folderPath:
+          type: string
+          description: Absolute or relative path to the image folder
+      required:
+        - folderPath
+
+    IndexImagesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        count:
+          type: integer
+          description: Number of images indexed
+      required:
+        - success
+        - message
+        - count
+
+    UploadImagesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        count:
+          type: integer
+          description: Number of images uploaded and indexed
+      required:
+        - success
+        - message
+        - count
+
+    StatsResponse:
+      type: object
+      properties:
+        totalImages:
+          type: integer
+        indexLoaded:
+          type: boolean
+        modelLoaded:
+          type: boolean
+      required:
+        - totalImages
+        - indexLoaded
+        - modelLoaded
+
+    ListImagesResponse:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexedImage"
+      required:
+        - images
+
+    IndexedImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        path:
+          type: string
+        filename:
+          type: string
+      required:
+        - id
+        - path
+        - filename
+
+    ClearResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        path:
+          type: string
+        filename:
+          type: string
+        score:
+          type: number
+          description: Similarity score 0-100
+        imageUrl:
+          type: string
+          description: URL to serve the image
+      required:
+        - id
+        - path
+        - filename
+        - score
+        - imageUrl
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        query:
+          type: object
+          properties:
+            threshold:
+              type: number
+            topK:
+              type: integer
+            filename:
+              type: string
+          required:
+            - threshold
+            - topK
+            - filename
+        totalFound:
+          type: integer
+      required:
+        - results
+        - query
+        - totalFound
