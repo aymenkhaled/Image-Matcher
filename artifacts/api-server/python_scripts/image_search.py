@@ -31,7 +31,16 @@ def image_to_vector(path, model, processor):
     img = Image.open(path).convert("RGB")
     inputs = processor(images=img, return_tensors="pt")
     with torch.no_grad():
-        vec = model.get_image_features(**inputs)
+        features = model.get_image_features(**inputs)
+    # transformers 5.x may return a ModelOutput object instead of a raw tensor
+    if isinstance(features, torch.Tensor):
+        vec = features
+    elif hasattr(features, "pooler_output") and features.pooler_output is not None:
+        vec = features.pooler_output
+    elif hasattr(features, "last_hidden_state"):
+        vec = features.last_hidden_state[:, 0]
+    else:
+        vec = features[0]
     vec = vec / vec.norm(p=2, dim=-1, keepdim=True)
     return vec.numpy().astype("float32")
 
