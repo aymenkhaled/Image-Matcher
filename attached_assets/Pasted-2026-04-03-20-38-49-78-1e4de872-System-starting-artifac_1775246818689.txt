@@ -1,0 +1,108 @@
+2026-04-03 20:38:49.78
+1e4de872
+System
+starting artifact processes count=1
+2026-04-03 20:38:49.78
+1e4de872
+System
+starting artifact process artifact=artifacts/api-server args=[node --enable-source-maps artifacts/api-server/dist/index.mjs] port=8080
+2026-04-03 20:38:49.83
+1e4de872
+System
+artifact process started pid=20 artifact=artifacts/api-server
+2026-04-03 20:38:50.57
+1e4de872
+System
+all artifact ports detected
+2026-04-03 20:38:50.57
+1e4de872
+System
+artifact port detected port=8080 detected=1 expected=1
+2026-04-03 20:38:50.57
+1e4de872
+System
+artifact processes running, waiting for signal or process exit
+2026-04-03 20:38:50.57
+1e4de872
+User
+{"level":30,"time":1775241530575,"pid":20,"hostname":"localhost","port":8080,"msg":"Server listening"}
+2026-04-03 20:38:50.73
+1e4de872
+User
+{"level":30,"time":1775241530734,"pid":20,"hostname":"localhost","req":{"id":1,"method":"GET","url":"/api/healthz"},"res":{"statusCode":200},"responseTime":21,"msg":"request completed"}
+2026-04-03 20:53:52.09
+1e4de872
+System
+received signal, shutting down artifact processes signal=terminated
+2026-04-03 20:53:52.09
+1e4de872
+System
+sending SIGTERM to artifact process artifact=artifacts/api-server
+2026-04-03 20:53:52.11
+1e4de872
+System
+all artifact processes stopped
+2026-04-03 20:53:52.11
+1e4de872
+System
+main done, exiting
+2026-04-03 20:53:52.11
+1e4de872
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+artifact mode enabled runnable=1 static=1
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+starting up user application
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+starting artifact processes for monorepo deployment
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+forwarding local port 0 to external port 80 (mapped as 1104)
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+waiting for runnable artifact ports ports=[8080]
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+registered static handler for artifact publicDir=artifacts/image-search/dist/public path=/
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+starting artifact processes count=1
+2026-04-03 21:51:22.73
+1cf1dd47
+System
+starting artifact process artifact=artifacts/api-server args=[node --enable-source-maps artifacts/api-server/dist/index.mjs] port=8080
+2026-04-03 21:51:22.76
+1cf1dd47
+System
+artifact process started artifact=artifacts/api-server pid=18
+2026-04-03 21:51:23.42
+1cf1dd47
+System
+artifact processes running, waiting for signal or process exit
+2026-04-03 21:51:23.42
+1cf1dd47
+System
+all artifact ports detected
+2026-04-03 21:51:23.42
+1cf1dd47
+System
+artifact port detected expected=1 port=8080 detected=1
+2026-04-03 21:51:23.42
+1cf1dd47
+User
+{"level":30,"time":1775245883422,"pid":18,"hostname":"localhost","port":8080,"msg":"Server listening (Python AI server warming up in background)"}
