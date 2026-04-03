@@ -18,7 +18,20 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// In production the model is pre-downloaded to .hf_cache during the build step.
+// In development the model downloads to the default HuggingFace cache on first run.
+const isProduction = process.env["NODE_ENV"] === "production";
+const artifactDir = path.resolve(path.dirname(PYTHON_SCRIPT), "..");
+const HF_HOME = isProduction
+  ? path.join(artifactDir, ".hf_cache")
+  : (process.env["HF_HOME"] ?? path.join(artifactDir, ".hf_cache"));
+
 function installPythonDeps(): void {
+  if (isProduction) {
+    // Packages are pre-installed at build time — skip the slow pip install
+    logger.info("Production: Python packages already installed at build time, skipping pip install");
+    return;
+  }
   const reqFile = path.join(path.dirname(PYTHON_SCRIPT), "requirements.txt");
   logger.info({ reqFile }, "Installing Python dependencies...");
   try {
@@ -35,11 +48,15 @@ function installPythonDeps(): void {
 async function startPythonServer(): Promise<void> {
   const pythonPort = getPythonPort();
 
-  logger.info({ script: PYTHON_SCRIPT, port: pythonPort }, "Starting Python image server");
+  logger.info({ script: PYTHON_SCRIPT, port: pythonPort, HF_HOME }, "Starting Python image server");
 
   const proc = spawn("python3", [PYTHON_SCRIPT, String(pythonPort)], {
     stdio: ["ignore", "inherit", "inherit"],
     detached: false,
+    env: {
+      ...process.env,
+      HF_HOME,
+    },
   });
 
   proc.on("error", (err) => {

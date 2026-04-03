@@ -1,0 +1,2 @@
+artifacts/api-server/.hf_cache/hub/models--openai--clip-vit-base-patch32/blobs/99d28a652e6ec46629ab7047a0ac82c69b1fe11e0ce672c43af65d3a9a3fc05d filter=lfs diff=lfs merge=lfs -text
+artifacts/api-server/.hf_cache/hub/models--openai--clip-vit-base-patch32/blobs/a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f filter=lfs diff=lfs merge=lfs -text
