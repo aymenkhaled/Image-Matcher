@@ -1,5 +1,4 @@
 import path from "path";
-import { logger } from "./logger";
 
 const PYTHON_PORT = 5050;
 
@@ -10,6 +9,14 @@ export const DB_FILE = path.join(BASE_DIR, "data", "images.index");
 export const PATHS_FILE = path.join(BASE_DIR, "data", "image_paths.json");
 export const UPLOADS_DIR = path.join(BASE_DIR, "uploaded_images");
 export const PYTHON_SCRIPT = path.join(BASE_DIR, "python_scripts", "image_server.py");
+
+// Set to true once the Python server is healthy and ready to serve requests.
+// Routes should check this and return 503 while it is false.
+export let pythonReady = false;
+
+export function setPythonReady(value: boolean): void {
+  pythonReady = value;
+}
 
 export function getPythonPort() {
   return PYTHON_PORT;

@@ -1,0 +1,88 @@
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+artifact mode enabled runnable=1 static=1
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+starting artifact processes for monorepo deployment
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+starting up user application
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+registered static handler for artifact path=/ publicDir=artifacts/image-search/dist/public
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+forwarding local port 0 to external port 80 (mapped as 1104)
+2026-04-03 19:54:38.78
+0fb8d20e
+System
+waiting for runnable artifact ports ports=[8080]
+2026-04-03 19:54:38.79
+0fb8d20e
+System
+starting artifact processes count=1
+2026-04-03 19:54:38.79
+0fb8d20e
+System
+starting artifact process args=[node --enable-source-maps artifacts/api-server/dist/index.mjs] port=8080 artifact=artifacts/api-server
+2026-04-03 19:54:38.83
+0fb8d20e
+System
+artifact process started artifact=artifacts/api-server pid=20
+2026-04-03 19:54:39.49
+0fb8d20e
+User
+{"level":30,"time":1775238879494,"pid":20,"hostname":"localhost","script":"/home/runner/workspace/artifacts/api-server/python_scripts/image_server.py","port":5050,"msg":"Starting Python image server"}
+2026-04-03 19:54:39.96
+0fb8d20e
+User
+Loading CLIP model (may download ~600MB on first run)...
+2026-04-03 19:54:39.96
+0fb8d20e
+User
+Traceback (most recent call last):
+2026-04-03 19:54:39.96
+0fb8d20e
+User
+ModuleNotFoundError: No module named 'torch'
+2026-04-03 19:54:39.96
+0fb8d20e
+User
+import torch
+2026-04-03 19:54:39.96
+0fb8d20e
+User
+File "/home/runner/workspace/artifacts/api-server/python_scripts/image_server.py", line 16, in <module>
+2026-04-03 19:54:39.97
+0fb8d20e
+User
+{"level":40,"time":1775238879973,"pid":20,"hostname":"localhost","code":1,"signal":null,"msg":"Python server exited unexpectedly"}
+2026-04-03 19:55:38.78
+0fb8d20e
+System
+sending SIGTERM to artifact process artifact=artifacts/api-server
+2026-04-03 19:55:38.78
+0fb8d20e
+System
+not all artifact ports opened within timeout expected=[8080] detected=0
+2026-04-03 19:55:38.79
+0fb8d20e
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-04-03 19:55:38.79
+0fb8d20e
+System
+all artifact processes stopped
+2026-04-03 19:55:38.79
+0fb8d20e
+System
+a port configuration was specified but the required port was never opened

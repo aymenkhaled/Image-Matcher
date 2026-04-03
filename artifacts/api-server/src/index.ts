@@ -1,7 +1,8 @@
-import { spawn } from "child_process";
+import { execSync, spawn } from "child_process";
+import path from "path";
 import app from "./app";
 import { logger } from "./lib/logger";
-import { PYTHON_SCRIPT, getPythonPort } from "./lib/python-bridge";
+import { PYTHON_SCRIPT, getPythonPort, setPythonReady } from "./lib/python-bridge";
 
 const rawPort = process.env["PORT"];
 
@@ -15,6 +16,20 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+function installPythonDeps(): void {
+  const reqFile = path.join(path.dirname(PYTHON_SCRIPT), "requirements.txt");
+  logger.info({ reqFile }, "Installing Python dependencies...");
+  try {
+    execSync(
+      `python3 -m pip install -r "${reqFile}" --quiet --disable-pip-version-check`,
+      { stdio: "inherit" },
+    );
+    logger.info("Python dependencies ready");
+  } catch (err) {
+    logger.error({ err }, "pip install failed — continuing anyway");
+  }
 }
 
 async function startPythonServer(): Promise<void> {
@@ -37,13 +52,14 @@ async function startPythonServer(): Promise<void> {
     }
   });
 
-  // Poll until Python server is healthy (up to 3 minutes for model load/download)
-  for (let i = 0; i < 180; i++) {
+  // Poll until Python server is healthy (up to 5 minutes for first-time model download)
+  for (let i = 0; i < 300; i++) {
     await new Promise<void>((r) => setTimeout(r, 1000));
     try {
       const res = await fetch(`http://127.0.0.1:${pythonPort}/health`);
       if (res.ok) {
         logger.info("Python image server is ready");
+        setPythonReady(true);
         return;
       }
     } catch {
@@ -51,19 +67,33 @@ async function startPythonServer(): Promise<void> {
     }
   }
 
-  throw new Error("Python server did not become ready in 3 minutes");
+  throw new Error("Python server did not become ready in 5 minutes");
 }
 
 async function main() {
-  await startPythonServer();
-
-  app.listen(port, (err) => {
-    if (err) {
-      logger.error({ err }, "Error listening on port");
-      process.exit(1);
-    }
-    logger.info({ port }, "Server listening");
+  // Start Express immediately so the port opens (required for deployment health checks)
+  await new Promise<void>((resolve, reject) => {
+    app.listen(port, (err) => {
+      if (err) {
+        logger.error({ err }, "Error listening on port");
+        reject(err);
+        return;
+      }
+      logger.info({ port }, "Server listening (Python AI server warming up in background)");
+      resolve();
+    });
   });
+
+  // Install deps + start Python server in the background
+  // API routes return 503 until pythonReady = true
+  void (async () => {
+    try {
+      installPythonDeps();
+      await startPythonServer();
+    } catch (err) {
+      logger.error({ err }, "Python server failed to start");
+    }
+  })();
 }
 
 main().catch((err) => {
