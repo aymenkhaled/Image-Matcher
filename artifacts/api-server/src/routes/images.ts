@@ -2,18 +2,10 @@ import { Router, type IRouter } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { runPythonCommand, getDbPaths } from "../lib/python-bridge";
-import { logger } from "../lib/logger";
+import { runPythonCommand, UPLOADS_DIR } from "../lib/python-bridge";
 
 const router: IRouter = Router();
 
-const { DB_DIR } = getDbPaths();
-
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
-}
-
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploaded_images");
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }

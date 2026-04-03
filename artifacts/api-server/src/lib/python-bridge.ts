@@ -1,65 +1,39 @@
-import { spawn } from "child_process";
 import path from "path";
 import { logger } from "./logger";
 
-const DB_DIR = path.resolve(process.cwd(), "data");
-const DB_FILE = path.join(DB_DIR, "images.index");
-const PATHS_FILE = path.join(DB_DIR, "image_paths.json");
-const SCRIPT_PATH = path.resolve(
-  process.cwd(),
-  "python_scripts/image_search.py",
-);
+const PYTHON_PORT = 5050;
 
-export function getDbPaths() {
-  return { DB_FILE, PATHS_FILE, DB_DIR };
+// import.meta.dirname = artifacts/api-server/dist/ in both dev and prod
+// (dev script builds first then runs from dist/)
+const BASE_DIR = path.resolve(import.meta.dirname, "..");
+export const DB_FILE = path.join(BASE_DIR, "data", "images.index");
+export const PATHS_FILE = path.join(BASE_DIR, "data", "image_paths.json");
+export const UPLOADS_DIR = path.join(BASE_DIR, "uploaded_images");
+export const PYTHON_SCRIPT = path.join(BASE_DIR, "python_scripts", "image_server.py");
+
+export function getPythonPort() {
+  return PYTHON_PORT;
 }
 
 export async function runPythonCommand(
   command: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  return new Promise((resolve, reject) => {
-    const input = JSON.stringify({
-      ...command,
-      db_file: DB_FILE,
-      paths_file: PATHS_FILE,
-    });
+  const payload = {
+    ...command,
+    db_file: DB_FILE,
+    paths_file: PATHS_FILE,
+  };
 
-    const proc = spawn("python3", [SCRIPT_PATH]);
-
-    let stdout = "";
-    let stderr = "";
-
-    proc.stdout.on("data", (data: Buffer) => {
-      stdout += data.toString();
-    });
-
-    proc.stderr.on("data", (data: Buffer) => {
-      stderr += data.toString();
-    });
-
-    proc.on("close", (code) => {
-      if (stderr) {
-        logger.warn({ stderr }, "Python script stderr");
-      }
-
-      if (!stdout.trim()) {
-        reject(new Error(`Python script produced no output. Exit code: ${code}. stderr: ${stderr}`));
-        return;
-      }
-
-      try {
-        const result = JSON.parse(stdout.trim());
-        resolve(result);
-      } catch (err) {
-        reject(new Error(`Failed to parse Python output: ${stdout}. Error: ${String(err)}`));
-      }
-    });
-
-    proc.on("error", (err) => {
-      reject(new Error(`Failed to spawn python3: ${err.message}`));
-    });
-
-    proc.stdin.write(input);
-    proc.stdin.end();
+  const response = await fetch(`http://127.0.0.1:${PYTHON_PORT}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(120_000),
   });
+
+  if (!response.ok) {
+    throw new Error(`Python server returned ${response.status}`);
+  }
+
+  return (await response.json()) as Record<string, unknown>;
 }

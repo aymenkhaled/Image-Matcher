@@ -1,10 +1,25 @@
+import { useState } from "react";
 import { Layout } from "@/components/layout";
-import { useGetStats, getGetStatsQueryKey, useListImages, getListImagesQueryKey, useUploadImages, useClearDatabase } from "@workspace/api-client-react";
+import {
+  useGetStats,
+  getGetStatsQueryKey,
+  useListImages,
+  getListImagesQueryKey,
+  useClearDatabase,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/image-upload";
-import { Database, Image as ImageIcon, Trash2, RefreshCw, AlertTriangle, Layers, Cpu } from "lucide-react";
+import {
+  Database,
+  Image as ImageIcon,
+  Trash2,
+  RefreshCw,
+  AlertTriangle,
+  Layers,
+  Cpu,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -22,34 +37,46 @@ import { Badge } from "@/components/ui/badge";
 export default function DatabasePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useGetStats();
   const { data: imagesData, isLoading: imagesLoading } = useListImages();
-  
-  const uploadMutation = useUploadImages();
+
   const clearMutation = useClearDatabase();
 
-  const handleUpload = (file: File) => {
+  const handleUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    setIsUploading(true);
     const formData = new FormData();
-    formData.append("files", file);
-    
-    uploadMutation.mutate({ data: { files: [file] } as any }, {
-      onSuccess: (res) => {
-        queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListImagesQueryKey() });
-        toast({
-          title: "Image Indexed",
-          description: `Successfully added image to database.`,
-        });
-      },
-      onError: () => {
-        toast({
-          title: "Upload Failed",
-          description: "There was an error uploading the image.",
-          variant: "destructive",
-        });
+    files.forEach((file) => formData.append("files", file));
+
+    try {
+      const res = await fetch("/api/images/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.status}`);
       }
-    });
+
+      const data = await res.json() as { count?: number };
+      queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListImagesQueryKey() });
+      toast({
+        title: "Images Indexed",
+        description: `Successfully added ${data.count ?? files.length} image(s) to the database.`,
+      });
+    } catch {
+      toast({
+        title: "Upload Failed",
+        description: "There was an error uploading the images.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleClear = () => {
@@ -68,7 +95,7 @@ export default function DatabasePage() {
           description: "Could not clear the database.",
           variant: "destructive",
         });
-      }
+      },
     });
   };
 
@@ -78,19 +105,26 @@ export default function DatabasePage() {
     <Layout>
       <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-background">
         <div className="max-w-6xl mx-auto space-y-8">
-          
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight">Database Management</h1>
-              <p className="text-muted-foreground text-lg">Monitor and manage your indexed image collection.</p>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Database Management
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Monitor and manage your indexed image collection.
+              </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() });
-                  queryClient.invalidateQueries({ queryKey: getListImagesQueryKey() });
+                  queryClient.invalidateQueries({
+                    queryKey: getGetStatsQueryKey(),
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: getListImagesQueryKey(),
+                  });
                 }}
                 className="gap-2"
               >
@@ -111,12 +145,17 @@ export default function DatabasePage() {
                       Clear all images?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete all indexed images from the database and remove their vector embeddings.
+                      This action cannot be undone. This will permanently delete
+                      all indexed images from the database and remove their
+                      vector embeddings.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClear} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    <AlertDialogAction
+                      onClick={handleClear}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
                       Yes, delete everything
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -132,24 +171,37 @@ export default function DatabasePage() {
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Images</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Images
+                </p>
                 <h3 className="text-3xl font-bold font-mono mt-1">
                   {statsLoading ? "..." : stats?.totalImages || 0}
                 </h3>
               </div>
             </Card>
-            
+
             <Card className="p-6 flex items-start gap-4">
               <div className="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
                 <Layers className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">FAISS Index</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  FAISS Index
+                </p>
                 <div className="mt-2">
-                  {statsLoading ? "..." : stats?.indexLoaded ? (
-                    <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">Loaded Active</Badge>
+                  {statsLoading ? (
+                    "..."
+                  ) : stats?.indexLoaded ? (
+                    <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">
+                      Loaded Active
+                    </Badge>
                   ) : (
-                    <Badge variant="destructive" className="bg-red-500/10 text-red-700 hover:bg-red-500/20 border-red-500/20">Offline</Badge>
+                    <Badge
+                      variant="destructive"
+                      className="bg-red-500/10 text-red-700 hover:bg-red-500/20 border-red-500/20"
+                    >
+                      Offline
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -160,12 +212,23 @@ export default function DatabasePage() {
                 <Cpu className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">ML Model</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  ML Model
+                </p>
                 <div className="mt-2">
-                  {statsLoading ? "..." : stats?.modelLoaded ? (
-                    <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">ResNet-50 Active</Badge>
+                  {statsLoading ? (
+                    "..."
+                  ) : stats?.modelLoaded ? (
+                    <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-500/20">
+                      CLIP Active
+                    </Badge>
                   ) : (
-                    <Badge variant="destructive" className="bg-red-500/10 text-red-700 hover:bg-red-500/20 border-red-500/20">Offline</Badge>
+                    <Badge
+                      variant="destructive"
+                      className="bg-red-500/10 text-red-700 hover:bg-red-500/20 border-red-500/20"
+                    >
+                      Offline
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -175,14 +238,16 @@ export default function DatabasePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <Card className="p-5">
-                <h3 className="text-sm font-semibold mb-3">Add to Index</h3>
+                <h3 className="text-sm font-semibold mb-1">Add to Index</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Upload an image to compute its embeddings and add it to the FAISS search index.
+                  Select one or more images to compute their embeddings and add
+                  them to the FAISS search index.
                 </p>
-                <ImageUpload 
+                <ImageUpload
                   onUpload={handleUpload}
-                  isUploading={uploadMutation.isPending}
-                  text="Upload to database"
+                  isUploading={isUploading}
+                  multiple={true}
+                  text="Upload images to database"
                   className="h-48"
                 />
               </Card>
@@ -195,7 +260,9 @@ export default function DatabasePage() {
                     <Database className="w-4 h-4" />
                     Indexed Images
                   </h3>
-                  <Badge variant="outline" className="font-mono">{images.length} entries</Badge>
+                  <Badge variant="outline" className="font-mono">
+                    {images.length} entries
+                  </Badge>
                 </div>
 
                 {imagesLoading ? (
@@ -205,15 +272,22 @@ export default function DatabasePage() {
                 ) : images.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-border rounded-lg bg-muted/10">
                     <Database className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                    <p className="text-lg font-medium text-foreground mb-1">Index is empty</p>
-                    <p className="text-sm text-muted-foreground">Upload images to start building your search database.</p>
+                    <p className="text-lg font-medium text-foreground mb-1">
+                      Index is empty
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Upload images to start building your search database.
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 overflow-y-auto pr-2 pb-2">
                     {images.map((img) => (
-                      <div key={img.id} className="group relative aspect-square rounded-md overflow-hidden bg-muted border border-border">
-                        <img 
-                          src={`/api/images/${img.id}`} 
+                      <div
+                        key={img.id}
+                        className="group relative aspect-square rounded-md overflow-hidden bg-muted border border-border"
+                      >
+                        <img
+                          src={`/api/images/${img.id}`}
                           alt={img.filename}
                           className="w-full h-full object-cover transition-transform group-hover:scale-110"
                           loading="lazy"
@@ -230,7 +304,6 @@ export default function DatabasePage() {
               </Card>
             </div>
           </div>
-
         </div>
       </div>
     </Layout>

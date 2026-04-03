@@ -1,0 +1,96 @@
+026-04-03 17:35:07.27
+1e4de872
+System
+registered static handler for artifact publicDir=artifacts/image-search/dist/public path=/
+2026-04-03 17:35:07.27
+1e4de872
+System
+waiting for runnable artifact ports ports=[8080]
+2026-04-03 17:35:07.27
+1e4de872
+System
+forwarding local port 0 to external port 80 (mapped as 1104)
+2026-04-03 17:35:07.28
+1e4de872
+System
+starting artifact processes count=1
+2026-04-03 17:35:07.28
+1e4de872
+System
+starting artifact process port=8080 artifact=artifacts/api-server args=[node --enable-source-maps artifacts/api-server/dist/index.mjs]
+2026-04-03 17:35:07.30
+1e4de872
+System
+artifact process started artifact=artifacts/api-server pid=18
+2026-04-03 17:35:07.91
+1e4de872
+System
+all artifact ports detected
+2026-04-03 17:35:07.91
+1e4de872
+System
+artifact processes running, waiting for signal or process exit
+2026-04-03 17:35:07.91
+1e4de872
+System
+artifact port detected port=8080 detected=1 expected=1
+2026-04-03 17:35:07.91
+1e4de872
+User
+{"level":30,"time":1775230507912,"pid":18,"hostname":"localhost","port":8080,"msg":"Server listening"}
+2026-04-03 17:35:08.10
+1e4de872
+User
+{"level":30,"time":1775230508101,"pid":18,"hostname":"localhost","req":{"id":1,"method":"GET","url":"/api/healthz"},"res":{"statusCode":200},"responseTime":29,"msg":"request completed"}
+2026-04-03 17:50:12.03
+1e4de872
+System
+received signal, shutting down artifact processes signal=terminated
+2026-04-03 17:50:12.03
+1e4de872
+System
+sending SIGTERM to artifact process artifact=artifacts/api-server
+2026-04-03 17:50:12.04
+1e4de872
+System
+all artifact processes stopped
+2026-04-03 17:50:12.04
+1e4de872
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-04-03 17:50:12.04
+1e4de872
+System
+main done, exiting
+2026-04-03 17:58:11.60
+1e4de872
+System
+starting up user application
+2026-04-03 17:58:11.60
+1e4de872
+System
+artifact mode enabled static=1 runnable=1
+2026-04-03 17:58:11.60
+1e4de872
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2026-04-03 17:58:11.60
+1e4de872
+System
+starting artifact processes for monorepo deployment
+2026-04-03 17:58:11.60
+1e4de872
+System
+registered static handler for artifact publicDir=artifacts/image-search/dist/public path=/
+2026-04-03 17:58:11.61
+1e4de872
+System
+waiting for runnable artifact ports ports=[8080]
+2026-04-03 17:58:11.61
+1e4de872
+System
+forwarding local port 0 to external port 80 (mapped as 1104)
+2026-04-03 17:58:11.61
+1e4de872
+System
+starting artifact processes count=1

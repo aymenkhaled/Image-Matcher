@@ -24,7 +24,9 @@ export default function SearchPage() {
   
   const searchMutation = useSearchImages();
 
-  const handleUpload = (file: File) => {
+  const handleUpload = (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
     setQueryImage(file);
     performSearch(file, threshold[0], topK[0]);
   };
